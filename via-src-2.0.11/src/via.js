@@ -1958,6 +1958,7 @@ function _via_reg_canvas_mouseup_handler(e) {
       }
 
       rect_update_corner(_via_region_edge[1], d, mx, my, preserve_aspect_ratio);
+      annotation_editor_show()
       rect_standardize_coordinates(d);
 
       var w = Math.abs(d[2] - d[0]);
