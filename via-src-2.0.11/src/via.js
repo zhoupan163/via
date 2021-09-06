@@ -342,6 +342,8 @@ var VIA_COCO_EXPORT_ATTRIBUTE_TYPE = [
 ];
 var _var_show_lable_index = 0; //show region lable in image
 var _via_attributes_region_list = []; //region list
+
+var optionCropDoms = []; // 暂存切割的显示dom
 //
 // Data structure to store metadata about file and regions
 //
@@ -2107,6 +2109,7 @@ function _via_reg_canvas_mousedown_handler(e) {
 //  - moving/resizing/select/unselect existing region
 function _via_reg_canvas_mouseup_handler(e) {
   e.stopPropagation();
+  optionCropDoms = [];// 属性展示栏消失时，清空切割的dom展示数组
   _via_click_x1 = e.offsetX;
   _via_click_y1 = e.offsetY;
 
@@ -7485,7 +7488,7 @@ function edit_file_metadata_in_annotation_editor() {
   annotation_editor_set_active_button();
   annotation_editor_update_content();
 }
-
+// 生成属性框的头部dom
 function annotation_editor_update_header_html() {
   var head = document.createElement("div");
   head.setAttribute("class", "row");
@@ -7806,12 +7809,17 @@ function annotation_editor_get_metadata_row_html(row_id) {
           "</textarea>";
         break;
       case "checkbox":
+        console.log("chebkxosss", attr_id, option_id);
         var options =
           _via_attributes[_via_metadata_being_updated][attr_id].options;
         var option_id;
         for (option_id in options) {
           var option_html_id = attr_html_id + "__" + option_id;
           var option = document.createElement("input");
+          if (attr_id === "crop") {
+            optionCropDoms.push(option);
+          }
+
           option.setAttribute("type", "checkbox");
           option.setAttribute("value", option_id);
           option.setAttribute("id", option_html_id);
@@ -7821,7 +7829,7 @@ function annotation_editor_get_metadata_row_html(row_id) {
           );
           option.setAttribute(
             "onchange",
-            "annotation_editor_on_metadata_update(this)"
+            `annotation_editor_on_metadata_update(this, '${attr_id}')`
           );
 
           var option_desc =
@@ -7837,6 +7845,7 @@ function annotation_editor_get_metadata_row_html(row_id) {
           if (typeof attr_value !== "undefined") {
             if (attr_value.hasOwnProperty(option_id)) {
               option.checked = attr_value[option_id];
+              // optionDoms.push({dom: option, checked: true})
             }
           }
 
@@ -7849,6 +7858,28 @@ function annotation_editor_get_metadata_row_html(row_id) {
           container.appendChild(label);
           col.appendChild(container);
         }
+        // 切割属性要单独判断
+        if (attr_id === "crop") {
+          for (let i = 0; i < optionCropDoms.length; i++) {
+            let option = optionCropDoms[i];
+            if (option.value == "0") {
+              // 如果选中了'无切割'，则其他选项禁止选中
+              if (option.checked) {
+                for (let j = 0; j < optionCropDoms.length; j++) {
+                  if (!optionCropDoms[j].checked) {
+                    optionCropDoms[j].setAttribute("disabled", true);
+                  }
+                }
+              } else {
+                option.setAttribute("disabled", true);
+              }
+            } else {
+              // 如果选中了'无切割'之外的其他选项，则'无切割'选项禁止选中
+              // optionCropDoms[0].setAttribute('disabled', true)
+            }
+          }
+        }
+
         break;
       case "radio":
         var option_id;
@@ -8116,6 +8147,8 @@ function _via_get_region_metadata_stat(img_index_list, attr_id) {
   return stat;
 }
 
+function annotation_editor_on_metadata_crop_update(p) {}
+
 // invoked when the input entry in annotation editor receives focus
 function annotation_editor_on_metadata_focus(p) {
   if (_via_annotation_editor_mode === VIA_ANNOTATION_EDITOR_MODE.ALL_REGIONS) {
@@ -8134,7 +8167,41 @@ function annotation_editor_on_metadata_focus(p) {
 }
 
 // invoked when the user updates annotations using the annotation editor
-function annotation_editor_on_metadata_update(p) {
+function annotation_editor_on_metadata_update(p, attr_id) {
+  console.log([p], attr_id);
+
+  // 切割属性要单独判断
+  if (attr_id === "crop") {
+    if (p.value == "0") {
+      // 如果选中了'无切割'，则其他选项禁止选中
+      if (p.checked) {
+        for (let j = 0; j < optionCropDoms.length; j++) {
+          if (optionCropDoms[j].value != "0") {
+            optionCropDoms[j].setAttribute("disabled", true);
+          }
+        }
+      } else {
+        for (let j = 0; j < optionCropDoms.length; j++) {
+          if (optionCropDoms[j].value != "0") {
+            optionCropDoms[j].disabled = false;
+          }
+        }
+      }
+    } else {
+      // 如果选中了'无切割'之外的其他选项，则'无切割'选项禁止选中
+      let d = optionCropDoms.find((dom) => dom.value == "0");
+      if (p.checked) {
+        d && d.setAttribute("disabled", true);
+      } else {
+        // 查询是否还有其他选项被勾选，当所有的非'无切割'选项都未勾选时，'无切割'选项才允许勾选
+        let result = optionCropDoms.find((dom) => dom.checked);
+        if (!result) {
+          d.disabled = false;
+        }
+      }
+    }
+  }
+
   var pid = annotation_editor_extract_html_id_components(p.id);
   var img_id = _via_image_id;
 
