@@ -5530,6 +5530,14 @@ function _via_reg_canvas_mouse_wheel_listener(e) {
       zoom_out();
     }
     e.preventDefault();
+  } else {
+    if (e.deltaY < 0) {
+      // 向上滚动
+      move_to_prev_image()
+    } else {
+      // 向下滚动
+      move_to_next_image()
+    }
   }
 }
 
