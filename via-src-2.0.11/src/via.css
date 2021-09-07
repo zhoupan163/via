@@ -857,3 +857,14 @@ ul.region_shape .selected {
   border-radius: 3px;
   font-size: 1.2em;
 }
+
+.attr_row .col.id,
+.attr_row .col.fuzzy,
+.attr_row .col.side,
+.attr_row .col.door {
+  min-width: 70px;
+}
+.attr_row .col.block,
+.attr_row .col.crop {
+  min-width: 100px;
+}
