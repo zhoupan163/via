@@ -452,6 +452,21 @@ function _via_init_mouse_handlers() {
     _via_reg_canvas_mousemove_handler,
     false
   );
+  document.getElementById("display_area").addEventListener(
+    "mousemove",
+    function (e) {
+      if (e.offsetY > _via_canvas_height || e.offsetX > _via_canvas_width || e.offsetY < 1 || e.offsetX < 1) {
+        // 绘制的时候越界
+        if (_via_is_user_drawing_region) {
+          _via_reg_canvas_mouseup_handler(e)
+          console.log("越界了");          
+        }
+        // 拖拽的时候越界 TODO:
+      }
+      
+    },
+    false
+  );
   _via_reg_canvas.addEventListener(
     "wheel",
     _via_reg_canvas_mouse_wheel_listener,
@@ -1930,8 +1945,8 @@ function select_region_shape(sel_shape_name) {
 }
 
 function set_all_canvas_size(w, h) {
-  _via_reg_canvas.height = h;
-  _via_reg_canvas.width = w;
+  _via_canvas_height = _via_reg_canvas.height = h;
+  _via_canvas_width = _via_reg_canvas.width = w;
 
   image_panel.style.height = h + "px";
   image_panel.style.width = w + "px";
@@ -2109,7 +2124,7 @@ function _via_reg_canvas_mousedown_handler(e) {
 //  - moving/resizing/select/unselect existing region
 function _via_reg_canvas_mouseup_handler(e) {
   e.stopPropagation();
-  optionCropDoms = [];// 属性展示栏消失时，清空切割的dom展示数组
+  optionCropDoms = []; // 属性展示栏消失时，清空切割的dom展示数组
   _via_click_x1 = e.offsetX;
   _via_click_y1 = e.offsetY;
 
@@ -5530,6 +5545,14 @@ function _via_reg_canvas_mouse_wheel_listener(e) {
       zoom_out();
     }
     e.preventDefault();
+  } else {
+    if (e.deltaY < 0) {
+      // 向上滚动
+      move_to_prev_image();
+    } else {
+      // 向下滚动
+      move_to_next_image();
+    }
   }
 }
 
