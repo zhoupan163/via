@@ -455,15 +455,19 @@ function _via_init_mouse_handlers() {
   document.getElementById("display_area").addEventListener(
     "mousemove",
     function (e) {
-      if (e.offsetY > _via_canvas_height || e.offsetX > _via_canvas_width || e.offsetY < 1 || e.offsetX < 1) {
+      if (
+        e.offsetY > _via_canvas_height ||
+        e.offsetX > _via_canvas_width ||
+        e.offsetY < 1 ||
+        e.offsetX < 1
+      ) {
         // 绘制的时候越界
         if (_via_is_user_drawing_region) {
-          _via_reg_canvas_mouseup_handler(e)
-          console.log("越界了");          
+          _via_reg_canvas_mouseup_handler(e);
+          console.log("越界了");
         }
         // 拖拽的时候越界 TODO:
       }
-      
     },
     false
   );
@@ -7420,6 +7424,17 @@ function annotation_editor_update_content() {
       ae.innerHTML = "";
       annotation_editor_update_header_html();
       annotation_editor_update_metadata_html();
+      var r = _via_canvas_regions[_via_user_sel_region_id]["shape_attributes"];
+      if (
+        ae.clientWidth + r["x"] + r["width"] >
+        _via_display_area.clientWidth
+      ) {
+        console.log("属性框应该展示在左边");
+        // 属性框就需要放到左边
+        let width = ae.getBoundingClientRect().width;
+        let left = _via_img_panel.getBoundingClientRect().x;
+        ae.style.left = left + r["x"] - width - 20 + "px";
+      }
     }
     ok_callback();
   });
@@ -7629,7 +7644,7 @@ function annotation_editor_add_row(row_id) {
 
 function annotation_editor_get_metadata_row_html(row_id) {
   var row = document.createElement("div");
-  row.setAttribute("class", "row");
+  row.setAttribute("class", "row attr_row");
   row.setAttribute("id", "ae_" + _via_metadata_being_updated + "_" + row_id);
 
   if (_via_metadata_being_updated === "region") {
@@ -7672,7 +7687,7 @@ function annotation_editor_get_metadata_row_html(row_id) {
   var attr_id;
   for (attr_id in _via_attributes[_via_metadata_being_updated]) {
     var col = document.createElement("span");
-    col.setAttribute("class", "col");
+    col.setAttribute("class", `col ${attr_id}`);
 
     var attr_type = _via_attributes[_via_metadata_being_updated][attr_id].type;
     var attr_desc = _via_attributes[_via_metadata_being_updated][attr_id].desc;
@@ -7846,6 +7861,7 @@ function annotation_editor_get_metadata_row_html(row_id) {
           option.setAttribute("type", "checkbox");
           option.setAttribute("value", option_id);
           option.setAttribute("id", option_html_id);
+          option.setAttribute("class", attr_id);
           option.setAttribute(
             "onfocus",
             "annotation_editor_on_metadata_focus(this)"
